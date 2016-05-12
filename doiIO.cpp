@@ -1,5 +1,5 @@
 using namespace std;
-
+#include "doiIO.h"
 /*
 class doiIO
 {
@@ -23,10 +23,8 @@ doiIO::doiIO()
 {
 
 	this->fname = new char[32];
-	strncpy(this->fname, "doi.txt\0");
+	strncpy(this->fname, "doi.txt", 7);
 	this->customFile = (false);
-
-	return;
 }
 
 doiIO::doiIO(char* a)
@@ -34,16 +32,12 @@ doiIO::doiIO(char* a)
 
 	this->fname = a;
 	this->customFile = (true);
-
-	return;
 }
 
 doiIO::~doiIO()
 {
 
 	delete[] this->fname;
-
-	return;
 }
 
 bool doiIO::read()
@@ -72,10 +66,10 @@ string doiIO::next()
 		return sent;
 	}
 
-	return it++;
+	return *it++;
 }
 
-unsigned int count()
+unsigned int doiIO::count()
 {
 	return this->dois.size();
 }
