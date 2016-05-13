@@ -16,6 +16,9 @@
 
 using namespace std;
 
+/*
+ *	Default Constructor.
+ */
 doiIO::doiIO()
 {
 
@@ -25,6 +28,13 @@ doiIO::doiIO()
 	this->ready = (false);
 }
 
+/*
+ *	Constructor to manually specify a filename
+ *	to extract DOI's from.
+ *
+ *	Parameters:
+ *		a (char* with allocated memory)
+ */
 doiIO::doiIO(char* a)
 {
 
@@ -33,12 +43,20 @@ doiIO::doiIO(char* a)
 	this->ready = (false);
 }
 
+/*
+ *	Default Destructor.
+ */
 doiIO::~doiIO()
 {
 
 	delete[] this->fname;
 }
 
+/*
+ *	Called to read the file for DOI's
+ *	DOI's are stored in the module, they
+ *	are accessed by calling next()
+ */
 bool doiIO::read()
 {
 
@@ -69,6 +87,12 @@ bool doiIO::read()
 	return this->ready;
 }
 
+/*
+ *	Iterates through read in DOI's.
+ *
+ *	Requires read() to be successfully
+ *	invoked.
+ */
 string doiIO::next()
 {
 
@@ -87,11 +111,18 @@ string doiIO::next()
 	return *it++;
 }
 
+/*
+ *	Returns the number of DOI values
+ *	stored in the module.
+ */
 unsigned int doiIO::count()
 {
 	return this->numDOI;
 }
 
+/*
+ *	Private function to construct filenames.
+ */
 string doiIO::getNextFormattedFilename()
 {
 
@@ -105,6 +136,13 @@ string doiIO::getNextFormattedFilename()
 	}
 }
 
+/*
+ *	Public output interface.
+ *
+ *	Parameters:
+ *		r (vector<ref*>)
+ *		c (vector<corRef*>)
+ */
 bool doiIO::outputToCSV(vector<ref*> r, vector<corRef*> c)
 {
 
@@ -123,7 +161,7 @@ bool doiIO::outputToCSV(vector<ref*> r, vector<corRef*> c)
 			<< (*i2)->pageEnd << "," << (*i2)->doi << "\n";
 		}
 		ofs.close();
-	} catch(std::ifstream::failure e) {
+	} catch(std::ofstream::failure e) {
 		cerr << "Error: Failed when opening/writing/closing file!" << endl;
 		return (false);
 	}
