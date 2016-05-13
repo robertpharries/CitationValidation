@@ -7,12 +7,12 @@
 struct ref{
 	string title;
 	string author;
-	int year;
+	string year;
 	string sourceTitle;
-	int volume;
-	int issue;
-	int pageStart;
-	int pageEnd;
+	string volume;
+	string issue;
+	string pageStart;
+	string pageEnd;
 	string doi;
 	string status; //Possibly make it an enum, with options being ok, wrong, unsure or equivalent
 };
@@ -20,11 +20,13 @@ struct ref{
 struct corRef{
 	string title;
 	string author;
-	int year;
+	string year;
 	string sourceTitle;
-	int volume;
-	int issue;
-	int pageStart;
-	int pageEnd;
+	string volume;
+	string issue;
+	string pageStart;
+	string pageEnd;
 	string doi;
 };
+
+std::vector<ref*> getFromApi(string);
