@@ -1,35 +1,7 @@
-#include <iostream>
-#include <string>
-#include "doiIO.h"
-//#include <curl/..>
+#include getApi.h
 
 using namespace std;
 
-//Alternatively, these could be stored as objects instead, with the output objects being included within them
-struct reference{
-	string title;
-	string author;
-	int year;
-	string sourceTitle;
-	int volume;
-	int issue;
-	int pageStart;
-	int pageEnd;
-	string doi;
-	string status; //Possibly make it an enum, with options being ok, wrong, unsure or equivalent
-};
-
-struct correctedRef{
-	string title;
-	string author;
-	int year;
-	string sourceTitle;
-	int volume;
-	int issue;
-	int pageStart;
-	int pageEnd;
-	string doi;
-};
 
 int main()
 {
