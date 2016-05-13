@@ -13,7 +13,6 @@
 #include <curlpp/Easy.hpp>
 #include <curlpp/Options.hpp>
 
-
 int main()
 {
     try
@@ -47,15 +46,25 @@ int main()
             BOOST_FOREACH(boost::property_tree::ptree::value_type &v2, ptr){
     	            std::cout << v2.first.data() << ": " << v2.second.data() << std::endl;
 
-        			if(!strcmp(v2.first.data(), "author-list")) {
+        			if(!strcmp(v2.first.data(), "author-list") && strcmp(v2.second.data().c_str(), "null")) {
         				boost::property_tree::ptree ptr2 = v2.second;
-           					BOOST_FOREACH(boost::property_tree::ptree::value_type &v3, ptr2.get_child("author")){
-           						boost::property_tree::ptree ptr3 = v3.second;
-           						BOOST_FOREACH(boost::property_tree::ptree::value_type &v4, ptr3){
-           							std::cout << v4.first.data() << ": " << v4.second.data() << std::endl;
-           						}
-           					}
+       					BOOST_FOREACH(boost::property_tree::ptree::value_type &v3, ptr2.get_child("author")){
+       						boost::property_tree::ptree ptr3 = v3.second;
+       						BOOST_FOREACH(boost::property_tree::ptree::value_type &v4, ptr3){
+       							std::cout << v4.first.data() << ": " << v4.second.data() << std::endl;
+       						}
+       					}
+        			}
 
+        			if(!strcmp(v2.first.data(), "volisspag") && strcmp(v2.second.data().c_str(), "null")) {
+        				boost::property_tree::ptree ptr2 = v2.second;
+       					BOOST_FOREACH(boost::property_tree::ptree::value_type &v3, ptr2){
+       						boost::property_tree::ptree ptr3 = v3.second;
+       						BOOST_FOREACH(boost::property_tree::ptree::value_type &v4, ptr3){
+       							std::cout << v4.first.data() << ": " << v4.second.data() << std::endl;
+	       						
+	       					}
+       					}
         			}
         				
         	}
