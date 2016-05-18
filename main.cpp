@@ -7,6 +7,7 @@ int main()
 {
 
 	doiIO input;
+	input.read();
 	for(int i = 0; i < input.count(); i++)
 	{
 		string doi = input.next();
