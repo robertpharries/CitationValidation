@@ -164,8 +164,8 @@ bool doiIO::outputToCSV(vector<ref*> r, vector<corRef*> c)
 		vector<string>::iterator si1 = (*i1)->authors.begin();
 		vector<string>::iterator si2 = (*i2)->authors.begin();
 
-		string authorlist1 = "\"";
-		string authorlist2 = "\"";
+		string authorlist1 = "";
+		string authorlist2 = "";
 
 		for( ; i1 < r.end(); i1++,i2++) {
 
@@ -189,16 +189,14 @@ bool doiIO::outputToCSV(vector<ref*> r, vector<corRef*> c)
 				authorlist2 = authorlist2.substr(0, authorlist2.size()-2);
 			}
 
-			authorlist1 = authorlist1 + "\"";
-			authorlist2 = authorlist2 + "\"";
-
 			cerr << "Exit" << endl;
 
-			ofs << (*i1)->title << "," << authorlist1 << "," << (*i1)->year << "," << (*i1)->sourceTitle << "," 
-			<< (*i1)->volume << "," << (*i1)->issue << "," << (*i1)->pageStart << "," << (*i1)->pageEnd << "," << (*i1)->doi 
-			<< "," << (*i1)->status << "," << " ," << (*i2)->title << "," << authorlist2 << "," << (*i2)->year << "," 
-			<< (*i2)->sourceTitle << "," << (*i2)->volume << "," << (*i2)->issue << "," << (*i2)->pageStart << "," 
-			<< (*i2)->pageEnd << "," << (*i2)->doi << "\n";
+			ofs << "\"" << (*i1)->title << "\"" << "," << "\"" << authorlist1 << "\"" << "," << "\"" << (*i1)->year << "\"" << "," << "\"" << (*i1)->sourceTitle << "\"" << "," 
+			<< "\"" << (*i1)->volume << "\"" << "," << "\"" << (*i1)->issue << "\"" << "," << "\"" << (*i1)->pageStart << "\"" << "," << "\"" << (*i1)->pageEnd << "\"" << "," << "\"" << (*i1)->doi 
+			<< "\"" << "," << "\"" << (*i1)->status << "\"" << "," << "\"" << " ," << "\"" << (*i2)->title << "\"" << "," << "\"" << authorlist2 << "\"" << "," << "\"" << (*i2)->year << "," 
+			<< "\"" << "," << "\"" << (*i1)->status << "\"" << "," << "\"" << " ," << "\"" << (*i2)->title << "\"" << "," << "\"" << authorlist2 << "\"" << "," << "\"" << (*i2)->year << "\"" << "," 
+			<< "\"" << (*i2)->sourceTitle << "\"" << "," << "\"" << (*i2)->volume << "\"" << "," << "\"" << (*i2)->issue << "\"" << "," << "\"" << (*i2)->pageStart << "\"" << "," << "\""
+			<< (*i2)->pageEnd << "\"" << "," << "\"" << (*i2)->doi << "\"" << "\n";
 		}
 		ofs.close();
 	} catch(std::ofstream::failure e) {
