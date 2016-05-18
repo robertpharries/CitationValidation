@@ -11,7 +11,7 @@ int main()
 	for(int i = 0; i < input.count(); i++)
 	{
 		string doi = input.next();
-		getFromApi(doi);
+		getFromApi(doi, input);
 	}
 
 	return 0;

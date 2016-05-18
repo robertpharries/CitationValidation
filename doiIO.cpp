@@ -126,6 +126,11 @@ unsigned int doiIO::count()
  */
 string doiIO::getNextFormattedFilename()
 {
+	cout << this->dois.size() << endl;
+	for (int i = 0; i < this->dois.size(); ++i)
+	{
+		cout << this->dois.at(i) << endl;
+	}
 
 	string newFname = boost::replace_all_copy(this->dois.at(outCount), "/", "_");
 	outCount++;
