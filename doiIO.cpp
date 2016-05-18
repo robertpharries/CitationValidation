@@ -126,14 +126,9 @@ unsigned int doiIO::count()
 string doiIO::getNextFormattedFilename()
 {
 
-	if (this->outit >= this->dois.end())
-	{
-		string sent = "EOF";
-		return sent;
-	} else {
-		string newFname = boost::replace_all_copy(*outit++, "/", "_");
-		return newFname + ".csv";
-	}
+	string newFname = boost::replace_all_copy(*outit++, "/", "_");
+	return newFname + ".csv";
+	
 }
 
 /*
