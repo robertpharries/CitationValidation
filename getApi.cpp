@@ -1,6 +1,7 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/algorithm/string.hpp>
+#include <boost/optional/optional.hpp>
 #include <boost/foreach.hpp>
 #include <cassert>
 #include <exception>
@@ -41,27 +42,28 @@ std::vector<ref*> getFromApi(string doi)
         int i = 0;
 
         BOOST_FOREACH(boost::property_tree::ptree::value_type &v, pt.get_child("abstracts-retrieval-response.references.reference")){
+            curref = new ref;
+
             boost::property_tree::ptree ptr = v.second;
+
+           	curref->sourceTitle = ptr.get<string>("sourcetitle");
+
             BOOST_FOREACH(boost::property_tree::ptree::value_type &v2, ptr){
             	std::string metaurl;
 
             	// Create current refenence struct to fill
-            	curref = new ref;
-
-	            std::cout << v2.first.data() << ": " << v2.second.data() << std::endl;
 
     			if(!strcmp(v2.first.data(), "author-list") && strcmp(v2.second.data().c_str(), "null")) {
     				boost::property_tree::ptree ptr2 = v2.second;
    					BOOST_FOREACH(boost::property_tree::ptree::value_type &v3, ptr2.get_child("author")){
    						boost::property_tree::ptree ptr3 = v3.second;
-   						BOOST_FOREACH(boost::property_tree::ptree::value_type &v4, ptr3){
-   							std::cout << v4.first.data() << ": " << v4.second.data() << std::endl;
-   						}
+
+   						curref->authors.push_back(ptr3.get<string>("ce:indexed-name"));
+
    					}
     			}
 
     			if (!strcmp(v2.first.data(), "scopus-id")) {
-    				std::cout << "SECOND: " << v2.second.data() << std::endl;
     				metaurl = "http://api.elsevier.com/content/abstract/scopus_id/" + v2.second.data() + "?apiKey=eb697e3061f267d5945a3bc3c959874a&view=META&httpAccept=application/json";
 
     				// Clear stringstream
@@ -74,6 +76,13 @@ std::vector<ref*> getFromApi(string doi)
 		        	boost::property_tree::ptree rpt;
 		        	boost::property_tree::read_json(ss, rpt);
 
+        		    curref->title = "[No title available]";
+	        		curref->volume = "";
+	        		curref->issue = "";
+	        		curref->pageStart = "";
+	        		curref->pageEnd = "";
+	        		curref->doi = "";
+
 		        	BOOST_FOREACH(boost::property_tree::ptree::value_type &vtec, rpt) {
 		        		if (strcmp(vtec.first.data(), "service-error")) {
 		        			curref->title = rpt.get<string>("abstracts-retrieval-response.coredata.dc:title");
@@ -82,34 +91,45 @@ std::vector<ref*> getFromApi(string doi)
 			        		boost::split(strs, barp, boost::is_any_of("-"));
 			        		curref->year = strs[0];
 
-			        		// TODO Fill these out
-			        		// ref->sourceTitle = 
-			            	// ref->volume = 
-			            	// ref->issue =
-			            	// ref->pageStart =
-			            	// ref->pageEnd =
-			            	// ref->doi =
-			            	// ref->status =
-			        	}	
+			        		boost::optional< boost::property_tree::ptree& > child;
+
+							child = rpt.get_child_optional( "abstracts-retrieval-response.coredata.prism:volume" );
+							if( child ) {
+			            		curref->volume = rpt.get<string>("abstracts-retrieval-response.coredata.prism:volume");
+							}
+							child = rpt.get_child_optional( "abstracts-retrieval-response.coredata.prism:issueIdentifier" );
+							if( child ) {
+			            		curref->issue = rpt.get<string>("abstracts-retrieval-response.coredata.prism:issueIdentifier");
+							}
+							child = rpt.get_child_optional( "abstracts-retrieval-response.coredata.prism:startingPage" );
+							if( child ) {
+			            		curref->pageStart = rpt.get<string>("abstracts-retrieval-response.coredata.prism:startingPage");
+							}
+							child = rpt.get_child_optional( "abstracts-retrieval-response.coredata.prism:endingPage" );
+							if( child ) {
+			            		curref->pageEnd = rpt.get<string>("abstracts-retrieval-response.coredata.prism:endingPage");
+							}
+							child = rpt.get_child_optional( "abstracts-retrieval-response.coredata.prism:doi" );
+							if( child ) {
+			            		curref->doi = rpt.get<string>("abstracts-retrieval-response.coredata.prism:doi");
+							}
+			            	curref->status = "unsure";
+			        	}
+			        		for(int i = 0; i < curref->authors.size(); i++)
+			        			cout << "curref->authors " << i << " " << curref->authors.at(i) << endl;
+			        		cout << "curref->title " << curref->title << endl;
+			        		cout << "curref->sourceTitle " << curref->sourceTitle << endl;
+			            	cout << "curref->volume " << curref->volume << endl;
+			            	cout << "curref->issue " << curref->issue << endl;
+			            	cout << "curref->pageStart " << curref->pageStart << endl;
+			            	cout << "curref->pageEnd " << curref->pageEnd << endl;
+			            	cout << "curref->doi " << curref->doi << endl;
+			            	cout << "curref->status " << curref->status << endl;
 			        }
     			}
-
-	    			// if(!strcmp(v2.first.data(), "volisspag") && strcmp(v2.second.data().c_str(), "null")) {
-    			// 	boost::property_tree::ptree ptr2 = v2.second;
-   				// 	BOOST_FOREACH(boost::property_tree::ptree::value_type &v3, ptr2){
-   				// 		boost::property_tree::ptree ptr3 = v3.second;
-   				// 		BOOST_FOREACH(boost::property_tree::ptree::value_type &v4, ptr3){
-   				// 			std::cout << v4.first.data() << ": " << v4.second.data() << std::endl;
-       						
-       // 					}
-   				// 	}
-    			// }
-        		
         	}
 
         	reflist.push_back(curref);
-        	std::cout << std::endl;
-
 		}
         // return EXIT_SUCCESS;
     }
