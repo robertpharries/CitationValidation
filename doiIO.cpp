@@ -83,7 +83,6 @@ bool doiIO::read()
 	}
 	
 	this->it = this->dois.begin();
-	this->outit = this->dois.begin();
 	this->numDOI = this->dois.size();
 
 	return this->ready;
