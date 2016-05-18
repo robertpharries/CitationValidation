@@ -147,16 +147,61 @@ bool doiIO::outputToCSV(vector<ref*> r, vector<corRef*> c)
 {
 
 	ofstream ofs;
+
 	vector<ref*>::iterator i1;
 	vector<corRef*>::iterator i2;
+
+
+
 	try {
+
 		ofs.open(this->getNextFormattedFilename().c_str());
+
+		ofs << "Title" << "," << "Authors" << "," << "Year"<< "," << "Source Title" << "," 
+		<< "Volume No." << "," << "Issue No." << "," << "Start Page" << "," << "End Page" << "," << "DOI" 
+		<< "," << "Status" << "," << " ," << "Title" << "," << "Authors" << "," << "Year" << "," 
+		<< "Source Title" << "," << "Volume No." << "," << "Issue No." << "," << "Page Start" << "," 
+		<< "End Page" << "," << "DOI" << "\n";
+
 		i1=r.begin();
 		i2=c.begin();
+
+		vector<string>::iterator si1 = (*i1)->authors.begin();
+		vector<string>::iterator si2 = (*i2)->authors.begin();
+
+		string authorlist1 = "\"";
+		string authorlist2 = "\"";
+
 		for( ; i1 < r.end(); i1++,i2++) {
-			ofs << (*i1)->title << "," << (*i1)->author << "," << (*i1)->year << "," << (*i1)->sourceTitle << "," 
+
+			for (int i = 0; i < (*i1)->authors.size(); i++)
+			{
+				authorlist1 = authorlist1 + (*i1)->authors.at(i) + ", ";
+			}
+
+			for (int i = 0; i < (*i2)->authors.size(); i++)
+			{
+				authorlist2 = authorlist2 + (*i2)->authors.at(i) + ", ";
+			}
+
+			if ((*i1)->authors.size() > 0)
+			{
+				authorlist1 = authorlist1.substr(0, authorlist1.size()-2);
+			}
+
+			if ((*i2)->authors.size() > 0)
+			{
+				authorlist2 = authorlist2.substr(0, authorlist2.size()-2);
+			}
+
+			authorlist1 = authorlist1 + "\"";
+			authorlist2 = authorlist2 + "\"";
+
+			cerr << "Exit" << endl;
+
+			ofs << (*i1)->title << "," << authorlist1 << "," << (*i1)->year << "," << (*i1)->sourceTitle << "," 
 			<< (*i1)->volume << "," << (*i1)->issue << "," << (*i1)->pageStart << "," << (*i1)->pageEnd << "," << (*i1)->doi 
-			<< "," << (*i1)->status << "," << "00000000," << (*i2)->title << "," << (*i2)->author << "," << (*i2)->year << "," 
+			<< "," << (*i1)->status << "," << " ," << (*i2)->title << "," << authorlist2 << "," << (*i2)->year << "," 
 			<< (*i2)->sourceTitle << "," << (*i2)->volume << "," << (*i2)->issue << "," << (*i2)->pageStart << "," 
 			<< (*i2)->pageEnd << "," << (*i2)->doi << "\n";
 		}
