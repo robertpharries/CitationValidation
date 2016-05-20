@@ -18,8 +18,20 @@
 
 #include "getApi.h"
 
-result getFromApi(string doi)
+/*getApi::getApi()
 {
+    this->done = (false);
+}
+
+getApi::~getApi()
+{
+
+}*/
+
+void* getFromApi(void* param)
+{
+    string &doi = *static_cast<string*>(param);
+
 	std::vector<ref*> reflist;
 	std::vector<corRef*> corRefList;
 	ref* curref = NULL;
@@ -256,10 +268,11 @@ result getFromApi(string doi)
         std::cerr << e.what() << std::endl;
     }
 
-    result currentResult;
-	currentResult.initial = reflist;
-	currentResult.corrected = corRefList;
+    result* currentResult = new result;
+	currentResult->initial = reflist;
+	currentResult->corrected = corRefList;
+    //this->done = (true);
 
-	return currentResult;
+	return (void*)currentResult;
 }
 

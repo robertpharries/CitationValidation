@@ -3,4 +3,17 @@
 #include "doiIO.h"
 //#include <curl/..>
 
-result getFromApi(string);
+void* getFromApi(void*);
+
+/*class getApi
+{
+public:
+	getApi();
+	~getApi();
+	void* getFromApi(void* param);
+	result getRes(int);
+	bool isDone();
+private:
+	result currentResult;
+	bool done;
+};*/

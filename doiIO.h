@@ -31,6 +31,7 @@
 #include <vector>
 #include <iostream>
 #include <boost/algorithm/string/replace.hpp>
+#include <pthread.h>
 
 using namespace std;
 
@@ -75,13 +76,14 @@ public:
 	string getDoi(int);
 	unsigned int count();
 	bool outputToCSV(int, vector<ref*>, vector<corRef*>);
-	void perform(int);
+	void perform();
 private:
 	char* fname;
 	vector<string> dois;
 	unsigned int numDOI;
 	bool customFile;
 	bool ready;
+	vector<string>::iterator it;
 	string getFormattedFilename(int);
 };
 

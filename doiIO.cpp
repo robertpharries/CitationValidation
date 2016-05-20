@@ -82,7 +82,6 @@ bool doiIO::read()
 	}
 	
 	this->it = this->dois.begin();
-	this->outit = this->dois.begin();
 	this->numDOI = this->dois.size();
 
 	return this->ready;
@@ -219,10 +218,25 @@ bool doiIO::outputToCSV(int i, vector<ref*> r, vector<corRef*> c)
 	return (true);
 }
 
-void doiIO::perform(int i)
+void doiIO::perform()
 {
-	result currentResult;
-	currentResult = getFromApi(this->getDoi(i));
-	cout << currentResult.initial.size() << " elements detected." << endl;
-	outputToCSV(i, currentResult.initial, currentResult.corrected);
+	pthread_t threads[this->count()];
+	for(int i = 0; i < this->count(); i++) {
+
+		pthread_create(&threads[i], NULL, getFromApi, &this->dois.at(i));
+	}
+
+	result* currentResults[this->count()];
+
+	for(int i = 0; i < this->count(); i++) {
+		pthread_join(threads[i], (void**)&currentResults[i]);
+	}
+
+	for (int i = 0; i < this->count(); i++)
+	{
+				// currentResult = (result*)getFromApi(&curdoi);
+		cout << currentResults[i]->initial.size() << " elements detected." << endl;
+		outputToCSV(i, currentResults[i]->initial, currentResults[i]->corrected);
+	}
+
 }
