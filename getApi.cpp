@@ -18,7 +18,7 @@
 
 #include "getApi.h"
 
-std::vector<ref*> getFromApi(string doi, doiIO d)
+result getFromApi(string doi)
 {
 	std::vector<ref*> reflist;
 	std::vector<corRef*> corRefList;
@@ -51,6 +51,7 @@ std::vector<ref*> getFromApi(string doi, doiIO d)
             boost::property_tree::ptree ptr = v.second;
 
            	curref->sourceTitle = ptr.get<string>("sourcetitle");
+           	cout << curref->sourceTitle << endl;
 
             BOOST_FOREACH(boost::property_tree::ptree::value_type &v2, ptr){
             	std::string metaurl;
@@ -86,6 +87,8 @@ std::vector<ref*> getFromApi(string doi, doiIO d)
 	        		curref->pageStart = "";
 	        		curref->pageEnd = "";
 	        		curref->doi = "";
+                    curref->status = "unsure";
+
 
 		        	BOOST_FOREACH(boost::property_tree::ptree::value_type &vtec, rpt) {
 		        		if (strcmp(vtec.first.data(), "service-error")) {
@@ -104,6 +107,8 @@ std::vector<ref*> getFromApi(string doi, doiIO d)
 							child = rpt.get_child_optional( "abstracts-retrieval-response.coredata.prism:issueIdentifier" );
 							if( child ) {
 			            		curref->issue = rpt.get<string>("abstracts-retrieval-response.coredata.prism:issueIdentifier");
+                                if(curref->issue == "1")
+                                    curref->issue = "2";
 							}
 							child = rpt.get_child_optional( "abstracts-retrieval-response.coredata.prism:startingPage" );
 							if( child ) {
@@ -117,7 +122,6 @@ std::vector<ref*> getFromApi(string doi, doiIO d)
 							if( child ) {
 			            		curref->doi = rpt.get<string>("abstracts-retrieval-response.coredata.prism:doi");
 							}
-			            	curref->status = "unsure";
 			        	}
 			        		// for(int i = 0; i < curref->authors.size(); i++)
 			        		// 	cout << "curref->authors " << i << " " << curref->authors.at(i) << endl;
@@ -167,10 +171,15 @@ std::vector<ref*> getFromApi(string doi, doiIO d)
         	boost::optional< boost::property_tree::ptree& > corPageEnd = cpt.get_child_optional("abstracts-retrieval-response.coredata.prism:endingPage");
         	boost::optional< boost::property_tree::ptree& > corDoi = cpt.get_child_optional("abstracts-retrieval-response.coredata.prism:doi");
 
+            if(corTitle || corYear || corSourceTitle || corVolume || corIssue || corPageStart || corPageEnd || corDoi)
+                curref->status = "Ok";
+
+
         	if (corTitle) {
         		string newTitle = cpt.get<string>("abstracts-retrieval-response.coredata.dc:title");
         		if (curref->title != newTitle) {
         			corCurRef->title = newTitle;
+                    curref->status = "Wrong";
         		}
         	}
 
@@ -182,6 +191,7 @@ std::vector<ref*> getFromApi(string doi, doiIO d)
 
         		if (curref->year != newYear) {
         			corCurRef->year = newYear;
+                    curref->status = "Wrong";
         		}
         	}
 
@@ -189,6 +199,7 @@ std::vector<ref*> getFromApi(string doi, doiIO d)
         		string newSourceTitle = cpt.get<string>("abstracts-retrieval-response.coredata.prism:publicationName");
         		if (curref->sourceTitle != newSourceTitle) {
 	        		corCurRef->sourceTitle = newSourceTitle;
+                    curref->status = "Wrong";
         		}
         	}
 
@@ -196,6 +207,7 @@ std::vector<ref*> getFromApi(string doi, doiIO d)
         		string newVolume = cpt.get<string>("abstracts-retrieval-response.coredata.prism:volume");
         		if (curref->volume != newVolume) {
         			corCurRef->volume = newVolume;
+                    curref->status = "Wrong";
         		}
         	}
 
@@ -203,6 +215,7 @@ std::vector<ref*> getFromApi(string doi, doiIO d)
         		string newIssue = cpt.get<string>("abstracts-retrieval-response.coredata.prism:issueIdentifier");
         		if (curref->issue != newIssue) {
         			corCurRef->issue = newIssue;
+                    curref->status = "Wrong";
         		}
         	}
 
@@ -210,6 +223,7 @@ std::vector<ref*> getFromApi(string doi, doiIO d)
         		string newPageStart = cpt.get<string>("abstracts-retrieval-response.coredata.prism:startingPage");
         		if (curref->pageStart != newPageStart) {
         			corCurRef->pageStart = newPageStart;
+                    curref->status = "Wrong";
         		}
         	}
 
@@ -217,6 +231,7 @@ std::vector<ref*> getFromApi(string doi, doiIO d)
         		string newPageEnd = cpt.get<string>("abstracts-retrieval-response.coredata.prism:endingPage");
         		if (curref->pageEnd != newPageEnd) {
         			corCurRef->pageEnd = newPageEnd;
+                    curref->status = "Wrong";
         		}
         	}
 
@@ -224,21 +239,27 @@ std::vector<ref*> getFromApi(string doi, doiIO d)
         		string newDoi = cpt.get<string>("abstracts-retrieval-response.coredata.prism:doi");
         		if (curref->doi != newDoi) {
         			corCurRef->doi = newDoi;
+                    curref->status = "Wrong";
         		}
         	}
 
         	reflist.push_back(curref);
         	corRefList.push_back(corCurRef);
+        cout << "corref: " << corCurRef->title << " " << corCurRef->year << " " << corCurRef->sourceTitle << " " << corCurRef->volume << " " << corCurRef->issue << " " << corCurRef->pageStart << " " << corCurRef->pageEnd << " " << corCurRef->doi << endl;
+
 		}
 
 		std::cout << "All DOI's processed" << std::endl;
-		d.outputToCSV(reflist, corRefList);
     }
     catch (std::exception const& e)
     {
         std::cerr << e.what() << std::endl;
     }
 
-    return reflist;
+    result currentResult;
+	currentResult.initial = reflist;
+	currentResult.corrected = corRefList;
+
+	return currentResult;
 }
 

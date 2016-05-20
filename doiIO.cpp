@@ -13,6 +13,7 @@
  */
 
 #include "doiIO.h"
+#include "getApi.h"
 
 using namespace std;
 
@@ -49,7 +50,7 @@ doiIO::doiIO(char* a)
 doiIO::~doiIO()
 {
 
-	delete[] this->fname;
+	//delete[] this->fname;
 }
 
 /*
@@ -93,22 +94,23 @@ bool doiIO::read()
  *	Requires read() to be successfully
  *	invoked.
  */
-string doiIO::next()
+string doiIO::getDoi(int i)
 {
-
 	if (!(this->ready))
 	{
 		cerr << "Error: You cannot call next() until you have successfully called read(). Please call read first." << endl;
 		string sent = "Error.";
 		return sent;
 	}
-	if (this->it >= this->dois.end())
-	{
-		string sent = "EOF";
-		return sent;
-	}
 
-	return *it++;
+	return this->dois.at(i);
+	// if (this->it >= this->dois.end())
+	// {
+	// 	string sent = "EOF";
+	// 	return sent;
+	// }
+
+	// return *it++;
 }
 
 /*
@@ -123,17 +125,14 @@ unsigned int doiIO::count()
 /*
  *	Private function to construct filenames.
  */
-string doiIO::getNextFormattedFilename()
+string doiIO::getFormattedFilename(int i)
 {
 
-	
-	if (this->outit >= this->dois.end()) {
-		string sent = "";
-		return sent;
-	} else {
-		string newFname = boost::replace_all_copy(*outit++, "/", "_");
-		return newFname + ".csv";
-	}
+	string newFname = this->dois.at(i);
+	newFname = boost::replace_all_copy(newFname, "/", "_");
+	cout << newFname + ".csv" << endl;
+	return newFname + ".csv";
+
 	
 }
 
@@ -144,19 +143,14 @@ string doiIO::getNextFormattedFilename()
  *		r (vector<ref*>)
  *		c (vector<corRef*>)
  */
-bool doiIO::outputToCSV(vector<ref*> r, vector<corRef*> c)
+bool doiIO::outputToCSV(int i, vector<ref*> r, vector<corRef*> c)
 {
 
 	ofstream ofs;
 
-	vector<ref*>::iterator i1;
-	vector<corRef*>::iterator i2;
-
-
-
 	try {
 
-		ofs.open(this->getNextFormattedFilename().c_str());
+		ofs.open(this->getFormattedFilename(i).c_str());
 
 		ofs << "Title" << "," << "Authors" << "," << "Year"<< "," << "Source Title" << "," 
 		<< "Volume No." << "," << "Issue No." << "," << "Start Page" << "," << "End Page" << "," << "DOI" 
@@ -164,45 +158,58 @@ bool doiIO::outputToCSV(vector<ref*> r, vector<corRef*> c)
 		<< "Source Title" << "," << "Volume No." << "," << "Issue No." << "," << "Page Start" << "," 
 		<< "End Page" << "," << "DOI" << "\n";
 
-		i1=r.begin();
-		i2=c.begin();
+		string authorlist1;
+		string authorlist2;
 
-		vector<string>::iterator si1 = (*i1)->authors.begin();
-		vector<string>::iterator si2 = (*i2)->authors.begin();
+		for(int j = 0; j < r.size(); j++) {
 
-		string authorlist1 = "";
-		string authorlist2 = "";
+			authorlist1 = "";
+			authorlist2 = "";
 
-		for( ; i1 < r.end(); i1++,i2++) {
-
-			for (int i = 0; i < (*i1)->authors.size(); i++)
+			for (int k = 0; k < r.at(j)->authors.size(); k++)
 			{
-				authorlist1 = authorlist1 + (*i1)->authors.at(i) + ", ";
+				authorlist1 = authorlist1 + r.at(j)->authors.at(k) + ", ";
 			}
 
-			for (int i = 0; i < (*i2)->authors.size(); i++)
+			for (int k = 0; k < c.at(j)->authors.size(); k++)
 			{
-				authorlist2 = authorlist2 + (*i2)->authors.at(i) + ", ";
+				authorlist2 = authorlist2 + c.at(j)->authors.at(k) + ", ";
 			}
 
-			if ((*i1)->authors.size() > 0)
+			if (r.at(j)->authors.size() > 0)
 			{
 				authorlist1 = authorlist1.substr(0, authorlist1.size()-2);
 			}
 
-			if ((*i2)->authors.size() > 0)
+			if (c.at(j)->authors.size() > 0)
 			{
 				authorlist2 = authorlist2.substr(0, authorlist2.size()-2);
 			}
 
 			cerr << "Exit" << endl;
 
-			ofs << "\"" << (*i1)->title << "\"" << "," << "\"" << authorlist1 << "\"" << "," << "\"" << (*i1)->year << "\"" << "," << "\"" << (*i1)->sourceTitle << "\"" << "," 
-			<< "\"" << (*i1)->volume << "\"" << "," << "\"" << (*i1)->issue << "\"" << "," << "\"" << (*i1)->pageStart << "\"" << "," << "\"" << (*i1)->pageEnd << "\"" << "," << "\"" << (*i1)->doi 
-			<< "\"" << "," << "\"" << (*i1)->status << "\"" << "," << "\"" << " ," << "\"" << (*i2)->title << "\"" << "," << "\"" << authorlist2 << "\"" << "," << "\"" << (*i2)->year << "," 
-			<< "\"" << "," << "\"" << (*i1)->status << "\"" << "," << "\"" << " ," << "\"" << (*i2)->title << "\"" << "," << "\"" << authorlist2 << "\"" << "," << "\"" << (*i2)->year << "\"" << "," 
-			<< "\"" << (*i2)->sourceTitle << "\"" << "," << "\"" << (*i2)->volume << "\"" << "," << "\"" << (*i2)->issue << "\"" << "," << "\"" << (*i2)->pageStart << "\"" << "," << "\""
-			<< (*i2)->pageEnd << "\"" << "," << "\"" << (*i2)->doi << "\"" << "\n";
+			ofs << "\"" << r.at(j)->title << "\"" << ",";
+			ofs << "\"" << authorlist1 << "\"" << ",";
+			ofs << "\"" << r.at(j)->year << "\"" << ",";
+			ofs << "\"" <<r.at(j)->sourceTitle << "\"" << ",";
+			ofs << "\"" << r.at(j)->volume << "\"" << ",";
+			ofs << "\"" << r.at(j)->issue << "\"" << ",";
+			ofs << "\"" << r.at(j)->pageStart << "\"" << ",";
+			ofs << "\"" << r.at(j)->pageEnd << "\"" << ",";
+			ofs << "\"" << r.at(j)->doi << "\"" << ",";;
+			ofs << "\"" << r.at(j)->status << "\"" << ",";
+			ofs << " ,";
+			ofs << "\"" << c.at(j)->title << "\"" << ",";
+			ofs << "\"" << authorlist2 << "\"" << ",";
+			ofs << "\"" << c.at(j)->year << "\"" << ","; 
+			ofs << "\"" << c.at(j)->sourceTitle << "\"" << ",";
+			ofs << "\"" << c.at(j)->volume << "\"" << ",";
+			ofs << "\"" << c.at(j)->issue << "\"" << ",";
+			ofs << "\"" << c.at(j)->pageStart << "\"" << ",";
+			ofs << "\"" << c.at(j)->pageEnd << "\"" << ",";
+			ofs << "\"" << c.at(j)->doi << "\"" << "\n";
+
+			cout << "page: " << c.at(j)->pageStart << "issue: " << c.at(j)->issue << endl;
 		}
 		ofs.close();
 	} catch(std::ofstream::failure e) {
@@ -210,4 +217,12 @@ bool doiIO::outputToCSV(vector<ref*> r, vector<corRef*> c)
 		return (false);
 	}
 	return (true);
+}
+
+void doiIO::perform(int i)
+{
+	result currentResult;
+	currentResult = getFromApi(this->getDoi(i));
+	cout << currentResult.initial.size() << " elements detected." << endl;
+	outputToCSV(i, currentResult.initial, currentResult.corrected);
 }

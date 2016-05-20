@@ -60,6 +60,11 @@ struct corRef{
 	string doi;
 };
 
+struct result {
+	vector<ref*> initial;
+	vector<corRef*> corrected;
+};
+
 class doiIO
 {
 public:
@@ -67,18 +72,17 @@ public:
 	doiIO(char*);
 	~doiIO();
 	bool read();
-	string next();
+	string getDoi(int);
 	unsigned int count();
-	bool outputToCSV(vector<ref*>, vector<corRef*>);
+	bool outputToCSV(int, vector<ref*>, vector<corRef*>);
+	void perform(int);
 private:
 	char* fname;
 	vector<string> dois;
 	unsigned int numDOI;
 	bool customFile;
 	bool ready;
-	vector<string>::iterator it;
-	vector<string>::iterator outit;
-	string getNextFormattedFilename();
+	string getFormattedFilename(int);
 };
 
 #define HEADER_DOIIO

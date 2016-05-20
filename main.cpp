@@ -6,12 +6,11 @@ using namespace std;
 int main()
 {
 
-	doiIO input;
-	input.read();
-	for(int i = 0; i < input.count(); i++)
+	doiIO doiTask;
+	doiTask.read();
+	for(int i = 0; i < doiTask.count(); i++)
 	{
-		string doi = input.next();
-		getFromApi(doi, input);
+		doiTask.perform(i);
 	}
 
 	return 0;

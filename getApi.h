@@ -3,4 +3,4 @@
 #include "doiIO.h"
 //#include <curl/..>
 
-std::vector<ref*> getFromApi(string, doiIO);
+result getFromApi(string);
