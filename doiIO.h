@@ -77,7 +77,7 @@ private:
 	bool customFile;
 	bool ready;
 	vector<string>::iterator it;
-	int outCount;
+	vector<string>::iterator outit;
 	string getNextFormattedFilename();
 };
 

@@ -26,7 +26,6 @@ doiIO::doiIO()
 	strncpy(this->fname, "doi.txt", 7);
 	this->customFile = (false);
 	this->ready = (false);
-	outCount = 0;
 }
 
 /*
@@ -42,7 +41,6 @@ doiIO::doiIO(char* a)
 	this->fname = a;
 	this->customFile = (true);
 	this->ready = (false);
-	outCount = 0;
 }
 
 /*
@@ -83,6 +81,7 @@ bool doiIO::read()
 	}
 	
 	this->it = this->dois.begin();
+	this->outit = this->dois.begin();
 	this->numDOI = this->dois.size();
 
 	return this->ready;
@@ -126,15 +125,15 @@ unsigned int doiIO::count()
  */
 string doiIO::getNextFormattedFilename()
 {
-	cout << this->dois.size() << endl;
-	for (int i = 0; i < this->dois.size(); ++i)
-	{
-		cout << this->dois.at(i) << endl;
-	}
 
-	string newFname = boost::replace_all_copy(this->dois.at(outCount), "/", "_");
-	outCount++;
-	return newFname + ".csv";
+	
+	if (this->outit >= this->dois.end()) {
+		string sent = "";
+		return sent;
+	} else {
+		string newFname = boost::replace_all_copy(*outit++, "/", "_");
+		return newFname + ".csv";
+	}
 	
 }
 
