@@ -71,7 +71,10 @@ bool doiIO::read()
 		while(ifs.good())
 		{
 			getline(ifs, line);
-			this->dois.push_back(line);
+			if (line.size > 4)
+			{
+				this->dois.push_back(line);
+			}
 		}
 		ifs.close();
 
@@ -218,6 +221,10 @@ bool doiIO::outputToCSV(int i, vector<ref*> r, vector<corRef*> c)
 	return (true);
 }
 
+/*
+ *	Kick start function built to make use of
+ *	API interface.
+ */
 void doiIO::perform()
 {
 	pthread_t threads[this->count()];
