@@ -22,7 +22,6 @@ using namespace std;
  */
 doiIO::doiIO()
 {
-
 	this->fname = new char[32];
 	strncpy(this->fname, "doi.txt", 7);
 	this->customFile = (false);
@@ -38,7 +37,6 @@ doiIO::doiIO()
  */
 doiIO::doiIO(char* a)
 {
-
 	this->fname = a;
 	this->customFile = (true);
 	this->ready = (false);
@@ -50,7 +48,6 @@ doiIO::doiIO(char* a)
 doiIO::~doiIO()
 {
 
-	//delete[] this->fname;
 }
 
 /*
@@ -60,9 +57,9 @@ doiIO::~doiIO()
  */
 bool doiIO::read()
 {
-
 	this->ready = (true);
 	ifstream ifs;
+	ifs.exceptions ( ifstream::failbit | ifstream::badbit );
 
 	try{
 
@@ -71,17 +68,17 @@ bool doiIO::read()
 		while(ifs.good())
 		{
 			getline(ifs, line);
-			//if (line.size() > 4)
-			//{
+			if (line.size() > 4)
+			{
 				this->dois.push_back(line);
-			//}
+			}
 		}
 		ifs.close();
 
 	} catch(std::ifstream::failure e) {
 		cerr << "Error: Failed when opening/reading/closing file!" << endl;
 		this->ready = (false);
-		return ready;
+		exit(0);
 	}
 	
 	this->it = this->dois.begin();
@@ -106,13 +103,6 @@ string doiIO::getDoi(int i)
 	}
 
 	return this->dois.at(i);
-	// if (this->it >= this->dois.end())
-	// {
-	// 	string sent = "EOF";
-	// 	return sent;
-	// }
-
-	// return *it++;
 }
 
 /*
@@ -129,13 +119,9 @@ unsigned int doiIO::count()
  */
 string doiIO::getFormattedFilename(int i)
 {
-
 	string newFname = this->dois.at(i);
 	newFname = boost::replace_all_copy(newFname, "/", "_");
-	cout << newFname + ".csv" << endl;
 	return newFname + ".csv";
-
-	
 }
 
 /*
@@ -147,7 +133,6 @@ string doiIO::getFormattedFilename(int i)
  */
 bool doiIO::outputToCSV(int i, vector<ref*> r, vector<corRef*> c)
 {
-
 	ofstream ofs;
 
 	try {
@@ -188,7 +173,6 @@ bool doiIO::outputToCSV(int i, vector<ref*> r, vector<corRef*> c)
 				authorlist2 = authorlist2.substr(0, authorlist2.size()-2);
 			}
 
-
 			ofs << "\"" << r.at(j)->title << "\"" << ",";
 			ofs << "\"" << authorlist1 << "\"" << ",";
 			ofs << "\"" << r.at(j)->year << "\"" << ",";
@@ -211,6 +195,9 @@ bool doiIO::outputToCSV(int i, vector<ref*> r, vector<corRef*> c)
 			ofs << "\"" << c.at(j)->doi << "\"" << "\n";
 
 		}
+
+		cout << "Successfully written " << dois.at(i) << " to CSV file." << endl;
+
 		ofs.close();
 	} catch(std::ofstream::failure e) {
 		cerr << "Error: Failed when opening/writing/closing file!" << endl;
@@ -239,9 +226,6 @@ void doiIO::perform()
 
 	for (int i = 0; i < this->count(); i++)
 	{
-				// currentResult = (result*)getFromApi(&curdoi);
-		cout << currentResults[i]->initial.size() << " elements detected." << endl;
 		outputToCSV(i, currentResults[i]->initial, currentResults[i]->corrected);
 	}
-
 }
