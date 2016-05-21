@@ -66,6 +66,11 @@ struct result {
 	vector<corRef*> corrected;
 };
 
+struct prepComp {
+	ref* initial;
+	string metaid;
+};
+
 class doiIO
 {
 public:

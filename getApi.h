@@ -4,6 +4,7 @@
 //#include <curl/..>
 
 void* getFromApi(void*);
+void* metaCall(void*);
 
 /*class getApi
 {

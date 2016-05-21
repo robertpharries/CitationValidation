@@ -40,14 +40,9 @@ void* getFromApi(void* param)
     try
     {
         std::stringstream ss;
-        // send your JSON above to the parser below, but populate ss first
-
-	    std::string refurl = "http://api.elsevier.com/content/abstract/doi/" + doi + "?apiKey=eb697e3061f267d5945a3bc3c959874a&view=REF&httpAccept=application/json";
-
-	    std::cout << refurl << std::endl;
+	    std::string refurl = "http://api.elsevier.com/content/abstract/doi/" + doi + "?apiKey=eb697e3061f267d5945a3bc3c959874a&view=FULL&httpAccept=application/json";
 
 	    curlpp::Easy c;
-
 	    c.setOpt( new curlpp::options::Url( refurl ) );
 	    c.setOpt( new curlpp::options::FollowLocation( "true" ) );
 	    ss << c;
@@ -55,213 +50,137 @@ void* getFromApi(void* param)
         boost::property_tree::ptree pt;
         boost::property_tree::read_json(ss, pt);
 
+        boost::optional< boost::property_tree::ptree& > checkptr = pt.get_child_optional("abstracts-retrieval-response.coredata");
+
+        if(checkptr) {
+            BOOST_FOREACH(boost::property_tree::ptree::value_type &v, pt.get_child("abstracts-retrieval-response.item.bibrecord.tail.bibliography.reference")) {
+                curref = new ref;
+                boost::property_tree::ptree ptr = v.second;
+
+                checkptr = ptr.get_child_optional("ref-info.ref-title.ref-titletext");
+                if(checkptr) {
+                    curref->title = ptr.get<string>("ref-info.ref-title.ref-titletext");
+                }
+
+                checkptr = ptr.get_child_optional("ref-info.ref-publicationyear.@first");
+                if(checkptr) {
+                    curref->year = ptr.get<string>("ref-info.ref-publicationyear.@first");
+                }
+
+                checkptr = ptr.get_child_optional("ref-info.ref-volisspag.voliss.@volume");
+                if(checkptr) {
+                    curref->volume = ptr.get<string>("ref-info.ref-volisspag.voliss.@volume");
+                }
+
+                checkptr = ptr.get_child_optional("ref-info.ref-volisspag.voliss.@issue");
+                if(checkptr) {
+                    curref->issue = ptr.get<string>("ref-info.ref-volisspag.voliss.@issue");
+                }
+
+                checkptr = ptr.get_child_optional("ref-info.ref-volisspag.pagerange.@first");
+                if(checkptr) {
+                    curref->pageStart = ptr.get<string>("ref-info.ref-volisspag.pagerange.@first");
+                }
+
+                checkptr = ptr.get_child_optional("ref-info.ref-volisspag.pagerange.@last");
+                if(checkptr) {
+                    curref->pageEnd = ptr.get<string>("ref-info.ref-volisspag.pagerange.@last");
+                } 
+
+                curref->status = "unsure";
+
+                reflist.push_back(curref);
+            }
+        }
+        cout << "filled from FULL" << endl;
+
+
+        refurl = "http://api.elsevier.com/content/abstract/doi/" + doi + "?apiKey=eb697e3061f267d5945a3bc3c959874a&view=REF&httpAccept=application/json";
+
+        c.setOpt( new curlpp::options::Url( refurl ) );
+        c.setOpt( new curlpp::options::FollowLocation( "true" ) );
+        ss << c;
+
+        boost::property_tree::read_json(ss, pt);
+
+        checkptr = pt.get_child_optional("abstracts-retrieval-response.references.reference");
         int i = 0;
 
-        BOOST_FOREACH(boost::property_tree::ptree::value_type &v, pt.get_child("abstracts-retrieval-response.references.reference")){
-            curref = new ref;
+        vector<prepComp> idList;
+        prepComp id;
+        //fill array before such that if there are any missing it is in the array but will not 
+        //query scopus, because it cannot
+        for (int i = 0; i < reflist.size(); ++i)
+        {
+            id.initial = reflist.at(i);
+            id.metaid = "";
+            idList.push_back(id);    
+        }
 
-            boost::property_tree::ptree ptr = v.second;
+        if(checkptr) {
+            BOOST_FOREACH(boost::property_tree::ptree::value_type &v, pt.get_child("abstracts-retrieval-response.references.reference")) {
+                boost::property_tree::ptree ptr = v.second;
 
-           	curref->sourceTitle = ptr.get<string>("sourcetitle");
-           	cout << curref->sourceTitle << endl;
+                checkptr = ptr.get_child_optional("ce:doi");
+                if(checkptr) {
+                    reflist.at(i)->doi = ptr.get<string>("ce:doi");
+                }
 
-            BOOST_FOREACH(boost::property_tree::ptree::value_type &v2, ptr){
-            	std::string metaurl;
+                checkptr = ptr.get_child_optional("sourcetitle");
+                if(checkptr) {
+                    reflist.at(i)->sourceTitle = ptr.get<string>("sourcetitle");
+                }
 
-            	// Create current refenence struct to fill
+                checkptr = ptr.get_child_optional("author-list.author");
+                if(checkptr) {
+                    int k = 0;
+                    BOOST_FOREACH(boost::property_tree::ptree::value_type &v2, ptr.get_child("author-list.author")){
+                        boost::property_tree::ptree ptr2 = v2.second;
 
-    			if(!strcmp(v2.first.data(), "author-list") && strcmp(v2.second.data().c_str(), "null")) {
-    				boost::property_tree::ptree ptr2 = v2.second;
-   					BOOST_FOREACH(boost::property_tree::ptree::value_type &v3, ptr2.get_child("author")){
-   						boost::property_tree::ptree ptr3 = v3.second;
+                        //if one author, they put a double of that in to force an array?
+                        if(k > 0 && ptr2.get<string>("ce:indexed-name") == reflist.at(i)->authors.at(k-1))
+                            break;
+                        reflist.at(i)->authors.push_back(ptr2.get<string>("ce:indexed-name"));
+                        k++;
+                    }
+                }
 
-   						curref->authors.push_back(ptr3.get<string>("ce:indexed-name"));
+                checkptr = ptr.get_child_optional("scopus-id");
+                if(checkptr) {
+                    idList.at(i).metaid = ptr.get<string>("scopus-id");
+                }
+                i++;
+            }
+        }
+        cout << "filled from REF" << endl;
 
-   					}
-    			}
+        pthread_t threads[idList.size()];
+        for (int i = 0; i < idList.size(); i++) {
+            pthread_create(&threads[i], NULL, metaCall, &idList.at(i));
+        }
 
-    			if (!strcmp(v2.first.data(), "scopus-id")) {
-    				metaurl = "http://api.elsevier.com/content/abstract/scopus_id/" + v2.second.data() + "?apiKey=eb697e3061f267d5945a3bc3c959874a&view=META&httpAccept=application/json";
+        corRef* currentRef;
 
-    				// Clear stringstream
-		        	ss.flush();
+        for (int i = 0; i < idList.size(); i++) {
+            pthread_join(threads[i], (void**)&currentRef);
+            corRefList.push_back(currentRef);
+        }
 
-				    c.setOpt( new curlpp::options::Url( metaurl ) );
-	    			c.setOpt( new curlpp::options::FollowLocation( "true" ) );
-	    			ss << c;
-
-		        	boost::property_tree::ptree rpt;
-		        	boost::property_tree::read_json(ss, rpt);
-
-        		    curref->title = "[No title available]";
-	        		curref->volume = "";
-	        		curref->issue = "";
-	        		curref->pageStart = "";
-	        		curref->pageEnd = "";
-	        		curref->doi = "";
-                    curref->status = "unsure";
-
-
-		        	BOOST_FOREACH(boost::property_tree::ptree::value_type &vtec, rpt) {
-		        		if (strcmp(vtec.first.data(), "service-error")) {
-		        			curref->title = rpt.get<string>("abstracts-retrieval-response.coredata.dc:title");
-				        	std::vector<string> strs;
-				        	string barp = rpt.get<string>("abstracts-retrieval-response.coredata.prism:coverDate");
-			        		boost::split(strs, barp, boost::is_any_of("-"));
-			        		curref->year = strs[0];
-
-			        		boost::optional< boost::property_tree::ptree& > child;
-
-							child = rpt.get_child_optional( "abstracts-retrieval-response.coredata.prism:volume" );
-							if( child ) {
-			            		curref->volume = rpt.get<string>("abstracts-retrieval-response.coredata.prism:volume");
-							}
-							child = rpt.get_child_optional( "abstracts-retrieval-response.coredata.prism:issueIdentifier" );
-							if( child ) {
-			            		curref->issue = rpt.get<string>("abstracts-retrieval-response.coredata.prism:issueIdentifier");
-                                if(curref->issue == "1")
-                                    curref->issue = "2";
-							}
-							child = rpt.get_child_optional( "abstracts-retrieval-response.coredata.prism:startingPage" );
-							if( child ) {
-			            		curref->pageStart = rpt.get<string>("abstracts-retrieval-response.coredata.prism:startingPage");
-							}
-							child = rpt.get_child_optional( "abstracts-retrieval-response.coredata.prism:endingPage" );
-							if( child ) {
-			            		curref->pageEnd = rpt.get<string>("abstracts-retrieval-response.coredata.prism:endingPage");
-							}
-							child = rpt.get_child_optional( "abstracts-retrieval-response.coredata.prism:doi" );
-							if( child ) {
-			            		curref->doi = rpt.get<string>("abstracts-retrieval-response.coredata.prism:doi");
-							}
-			        	}
-			        		// for(int i = 0; i < curref->authors.size(); i++)
-			        		// 	cout << "curref->authors " << i << " " << curref->authors.at(i) << endl;
-			        		// cout << "curref->title " << curref->title << endl;
-			        		// cout << "curref->sourceTitle " << curref->sourceTitle << endl;
-			          //   	cout << "curref->volume " << curref->volume << endl;
-			          //   	cout << "curref->issue " << curref->issue << endl;
-			          //   	cout << "curref->pageStart " << curref->pageStart << endl;
-			          //   	cout << "curref->pageEnd " << curref->pageEnd << endl;
-			          //   	cout << "curref->doi " << curref->doi << endl;
-			          //   	cout << "curref->status " << curref->status << endl;
-			        }
-    			}
-        	}
-
-        	// Perform a search here on the reference to make sure the information we have from the API is correct
-        	corCurRef = new corRef;
-        	corCurRef->title = "";
-        	corCurRef->year = "";
-        	corCurRef->sourceTitle = "";
-        	corCurRef->volume = "";
-        	corCurRef->issue = "";
-        	corCurRef->pageStart = "";
-        	corCurRef->pageEnd = "";
-        	corCurRef->doi = "";
-
-        	// Grab the scopus ID from the current reference
-        	string sid = ptr.get<string>("scopus-id");
-
-        	// Reset the stringstream and query the API again
-        	ss.flush();
-        	string metaurl = "http://api.elsevier.com/content/abstract/scopus_id/" + sid + "?apiKey=eb697e3061f267d5945a3bc3c959874a&view=META&httpAccept=application/json";
-        	c.setOpt(new curlpp::options::Url(metaurl));
-        	c.setOpt(new curlpp::options::FollowLocation("true"));
-        	ss << c;
-
-	        boost::property_tree::ptree cpt;
-        	boost::property_tree::read_json(ss, cpt);
-
-        	// Check all the fields
-        	boost::optional< boost::property_tree::ptree& > corTitle = cpt.get_child_optional("abstracts-retrieval-response.coredata.dc:title");
-        	boost::optional< boost::property_tree::ptree& > corYear = cpt.get_child_optional("abstracts-retrieval-response.coredata.prism:coverDate");
-        	boost::optional< boost::property_tree::ptree& > corSourceTitle = cpt.get_child_optional("abstracts-retrieval-response.coredata.prism:publicationName");
-        	boost::optional< boost::property_tree::ptree& > corVolume = cpt.get_child_optional("abstracts-retrieval-response.coredata.prism:volume");
-        	boost::optional< boost::property_tree::ptree& > corIssue = cpt.get_child_optional("abstracts-retrieval-response.coredata.prism:issueIdentifier");
-        	boost::optional< boost::property_tree::ptree& > corPageStart = cpt.get_child_optional("abstracts-retrieval-response.coredata.prism:startingPage");
-        	boost::optional< boost::property_tree::ptree& > corPageEnd = cpt.get_child_optional("abstracts-retrieval-response.coredata.prism:endingPage");
-        	boost::optional< boost::property_tree::ptree& > corDoi = cpt.get_child_optional("abstracts-retrieval-response.coredata.prism:doi");
-
-            if(corTitle || corYear || corSourceTitle || corVolume || corIssue || corPageStart || corPageEnd || corDoi)
-                curref->status = "Ok";
-
-
-        	if (corTitle) {
-        		string newTitle = cpt.get<string>("abstracts-retrieval-response.coredata.dc:title");
-        		if (curref->title != newTitle) {
-        			corCurRef->title = newTitle;
-                    curref->status = "Wrong";
-        		}
-        	}
-
-        	if (corYear) {
-        		string actualYear = cpt.get<string>("abstracts-retrieval-response.coredata.prism:coverDate");
-	        	std::vector<string> strs;
-	        	boost::split(strs, actualYear, boost::is_any_of("-"));
-    	    	string newYear = strs[0];
-
-        		if (curref->year != newYear) {
-        			corCurRef->year = newYear;
-                    curref->status = "Wrong";
-        		}
-        	}
-
-        	if (corSourceTitle) {
-        		string newSourceTitle = cpt.get<string>("abstracts-retrieval-response.coredata.prism:publicationName");
-        		if (curref->sourceTitle != newSourceTitle) {
-	        		corCurRef->sourceTitle = newSourceTitle;
-                    curref->status = "Wrong";
-        		}
-        	}
-
-        	if (corVolume) {
-        		string newVolume = cpt.get<string>("abstracts-retrieval-response.coredata.prism:volume");
-        		if (curref->volume != newVolume) {
-        			corCurRef->volume = newVolume;
-                    curref->status = "Wrong";
-        		}
-        	}
-
-        	if (corIssue) {
-        		string newIssue = cpt.get<string>("abstracts-retrieval-response.coredata.prism:issueIdentifier");
-        		if (curref->issue != newIssue) {
-        			corCurRef->issue = newIssue;
-                    curref->status = "Wrong";
-        		}
-        	}
-
-        	if (corPageStart) {
-        		string newPageStart = cpt.get<string>("abstracts-retrieval-response.coredata.prism:startingPage");
-        		if (curref->pageStart != newPageStart) {
-        			corCurRef->pageStart = newPageStart;
-                    curref->status = "Wrong";
-        		}
-        	}
-
-        	if (corPageEnd) {
-        		string newPageEnd = cpt.get<string>("abstracts-retrieval-response.coredata.prism:endingPage");
-        		if (curref->pageEnd != newPageEnd) {
-        			corCurRef->pageEnd = newPageEnd;
-                    curref->status = "Wrong";
-        		}
-        	}
-
-        	if (corDoi) {
-        		string newDoi = cpt.get<string>("abstracts-retrieval-response.coredata.prism:doi");
-        		if (curref->doi != newDoi) {
-        			corCurRef->doi = newDoi;
-                    curref->status = "Wrong";
-        		}
-        	}
-
-        	reflist.push_back(curref);
-        	corRefList.push_back(corCurRef);
-        cout << "corref: " << corCurRef->title << " " << corCurRef->year << " " << corCurRef->sourceTitle << " " << corCurRef->volume << " " << corCurRef->issue << " " << corCurRef->pageStart << " " << corCurRef->pageEnd << " " << corCurRef->doi << endl;
-
-		}
+        // for (int i = 0; i < corRefList.size(); ++i)
+        // {
+        //     for(int k = 0; k < corRefList.at(i)->authors.size(); k++)
+        //     //     cout << "corRefList.at(i)->authors " << k << " " << corRefList.at(i)->authors.at(k) << endl;
+        //     // cout << "corRefList.at(i)->title " << corRefList.at(i)->title << endl;
+        //     // cout << "corRefList.at(i)->sourceTitle " << corRefList.at(i)->sourceTitle << endl;
+        //     // cout << "corRefList.at(i)->volume " << corRefList.at(i)->volume << endl;
+        //     // cout << "corRefList.at(i)->issue " << corRefList.at(i)->issue << endl;
+        //     // cout << "corRefList.at(i)->pageStart " << corRefList.at(i)->pageStart << endl;
+        //     // cout << "corRefList.at(i)->pageEnd " << corRefList.at(i)->pageEnd << endl;
+        //     // cout << "corRefList.at(i)->doi " << corRefList.at(i)->doi << endl;
+        // }
 
 		std::cout << "All DOI's processed" << std::endl;
+
     }
     catch (std::exception const& e)
     {
@@ -271,8 +190,136 @@ void* getFromApi(void* param)
     result* currentResult = new result;
 	currentResult->initial = reflist;
 	currentResult->corrected = corRefList;
-    //this->done = (true);
 
+    //this->done = (true);
 	return (void*)currentResult;
+}
+
+void* metaCall(void* param)
+{
+    prepComp *compstruct = static_cast<prepComp*>(param);
+    corRef* corCurRef = new corRef;
+
+    string id = compstruct->metaid;
+    // cout << "Processing id: " << id << endl;
+    if(id == "") {
+         corCurRef->title = "";
+         corCurRef->year = "";
+         corCurRef->sourceTitle = "";
+         corCurRef->volume = "";
+         corCurRef->issue = "";
+         corCurRef->pageStart = "";
+         corCurRef->pageEnd = "";
+         corCurRef->doi = "";
+         return corCurRef;
+    }
+
+
+    string metaurl = "http://api.elsevier.com/content/abstract/scopus_id/" + id + "?apiKey=eb697e3061f267d5945a3bc3c959874a&view=META&httpAccept=application/json";
+
+    std::stringstream ss;
+    curlpp::Easy c;
+
+    c.setOpt( new curlpp::options::Url( metaurl ) );
+    c.setOpt( new curlpp::options::FollowLocation( "true" ) );
+    ss << c;  
+
+    boost::property_tree::ptree cpt;
+    boost::property_tree::read_json(ss, cpt);
+
+     // Perform a search here on the reference to make sure the information we have from the API is correct
+     corCurRef = new corRef;
+     corCurRef->title = "";
+     corCurRef->year = "";
+     corCurRef->sourceTitle = "";
+     corCurRef->volume = "";
+     corCurRef->issue = "";
+     corCurRef->pageStart = "";
+     corCurRef->pageEnd = "";
+     corCurRef->doi = "";
+
+     // Check all the fields
+     boost::optional< boost::property_tree::ptree& > corTitle = cpt.get_child_optional("abstracts-retrieval-response.coredata.dc:title");
+     boost::optional< boost::property_tree::ptree& > corYear = cpt.get_child_optional("abstracts-retrieval-response.coredata.prism:coverDate");
+     boost::optional< boost::property_tree::ptree& > corSourceTitle = cpt.get_child_optional("abstracts-retrieval-response.coredata.prism:publicationName");
+     boost::optional< boost::property_tree::ptree& > corVolume = cpt.get_child_optional("abstracts-retrieval-response.coredata.prism:volume");
+     boost::optional< boost::property_tree::ptree& > corIssue = cpt.get_child_optional("abstracts-retrieval-response.coredata.prism:issueIdentifier");
+     boost::optional< boost::property_tree::ptree& > corPageStart = cpt.get_child_optional("abstracts-retrieval-response.coredata.prism:startingPage");
+     boost::optional< boost::property_tree::ptree& > corPageEnd = cpt.get_child_optional("abstracts-retrieval-response.coredata.prism:endingPage");
+     boost::optional< boost::property_tree::ptree& > corDoi = cpt.get_child_optional("abstracts-retrieval-response.coredata.prism:doi");
+
+        if(corTitle || corYear || corSourceTitle || corVolume || corIssue || corPageStart || corPageEnd || corDoi)
+            compstruct->initial->status = "Ok";
+
+
+     if (corTitle) {
+         string newTitle = cpt.get<string>("abstracts-retrieval-response.coredata.dc:title");
+         if (compstruct->initial->title != newTitle) {
+             corCurRef->title = newTitle;
+                compstruct->initial->status = "Wrong";
+         }
+     }
+
+     if (corYear) {
+         string actualYear = cpt.get<string>("abstracts-retrieval-response.coredata.prism:coverDate");
+         std::vector<string> strs;
+         boost::split(strs, actualYear, boost::is_any_of("-"));
+         string newYear = strs[0];
+
+         if (compstruct->initial->year != newYear) {
+             corCurRef->year = newYear;
+                compstruct->initial->status = "Wrong";
+         }
+     }
+
+     if (corSourceTitle) {
+         string newSourceTitle = cpt.get<string>("abstracts-retrieval-response.coredata.prism:publicationName");
+         if (compstruct->initial->sourceTitle != newSourceTitle) {
+             corCurRef->sourceTitle = newSourceTitle;
+                compstruct->initial->status = "Wrong";
+         }
+     }
+
+     if (corVolume) {
+         string newVolume = cpt.get<string>("abstracts-retrieval-response.coredata.prism:volume");
+         if (compstruct->initial->volume != newVolume) {
+             corCurRef->volume = newVolume;
+                compstruct->initial->status = "Wrong";
+         }
+     }
+
+     if (corIssue) {
+         string newIssue = cpt.get<string>("abstracts-retrieval-response.coredata.prism:issueIdentifier");
+         if (compstruct->initial->issue != newIssue) {
+             corCurRef->issue = newIssue;
+                compstruct->initial->status = "Wrong";
+         }
+     }
+
+     if (corPageStart) {
+         string newPageStart = cpt.get<string>("abstracts-retrieval-response.coredata.prism:startingPage");
+         if (compstruct->initial->pageStart != newPageStart) {
+             corCurRef->pageStart = newPageStart;
+                compstruct->initial->status = "Wrong";
+         }
+     }
+
+     if (corPageEnd) {
+         string newPageEnd = cpt.get<string>("abstracts-retrieval-response.coredata.prism:endingPage");
+         if (compstruct->initial->pageEnd != newPageEnd) {
+             corCurRef->pageEnd = newPageEnd;
+                compstruct->initial->status = "Wrong";
+         }
+     }
+
+     if (corDoi) {
+         string newDoi = cpt.get<string>("abstracts-retrieval-response.coredata.prism:doi");
+         if (compstruct->initial->doi != newDoi) {
+             corCurRef->doi = newDoi;
+                compstruct->initial->status = "Wrong";
+         }
+     }
+
+    return corCurRef;
 }
 

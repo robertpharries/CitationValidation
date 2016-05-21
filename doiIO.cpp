@@ -71,10 +71,10 @@ bool doiIO::read()
 		while(ifs.good())
 		{
 			getline(ifs, line);
-			if (line.size() > 4)
-			{
+			//if (line.size() > 4)
+			//{
 				this->dois.push_back(line);
-			}
+			//}
 		}
 		ifs.close();
 
@@ -188,7 +188,6 @@ bool doiIO::outputToCSV(int i, vector<ref*> r, vector<corRef*> c)
 				authorlist2 = authorlist2.substr(0, authorlist2.size()-2);
 			}
 
-			cerr << "Exit" << endl;
 
 			ofs << "\"" << r.at(j)->title << "\"" << ",";
 			ofs << "\"" << authorlist1 << "\"" << ",";
@@ -211,7 +210,6 @@ bool doiIO::outputToCSV(int i, vector<ref*> r, vector<corRef*> c)
 			ofs << "\"" << c.at(j)->pageEnd << "\"" << ",";
 			ofs << "\"" << c.at(j)->doi << "\"" << "\n";
 
-			cout << "page: " << c.at(j)->pageStart << "issue: " << c.at(j)->issue << endl;
 		}
 		ofs.close();
 	} catch(std::ofstream::failure e) {
