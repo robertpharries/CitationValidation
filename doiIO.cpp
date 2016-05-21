@@ -71,7 +71,7 @@ bool doiIO::read()
 		while(ifs.good())
 		{
 			getline(ifs, line);
-			if (line.size > 4)
+			if (line.size() > 4)
 			{
 				this->dois.push_back(line);
 			}
