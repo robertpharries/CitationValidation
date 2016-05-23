@@ -5,8 +5,8 @@
  *	file for processing, as well as outputting reference
  *	information to a .csv file.
  *
- *	Author:	Luke Mitchell
- *	Email:	lm671@uowmail.edu.au
+ *	Author:	Luke Mitchell, Robert Harries, Shannon Rothe, Brett Wilson
+ *	Email:	lm671, rph289, smr999, baw246 @uowmail.edu.au
  *	Github:	http://github.com/auVeypor/311
  *	Group:	Project #2, Group #1
  * 
@@ -53,7 +53,7 @@ doiIO::~doiIO()
 /*
  *	Called to read the file for DOI's
  *	DOI's are stored in the module, they
- *	are accessed by calling next()
+ *	are accessed by calling getDoi()
  */
 bool doiIO::read()
 {
@@ -88,7 +88,7 @@ bool doiIO::read()
 }
 
 /*
- *	Iterates through read in DOI's.
+ *	Gives the i'th doi from the file
  *
  *	Requires read() to be successfully
  *	invoked.

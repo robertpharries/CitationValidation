@@ -1,3 +1,17 @@
+/*
+ *	Implementation of Api retrieval
+ *
+ *	This module handles querying and retrieving the required data from
+ * 	the Scopus Api's and comparing them, to verify incorrect fields in
+ *	the originals.
+ *
+ *	Author:	Luke Mitchell, Robert Harries, Shannon Rothe, Brett Wilson
+ *	Email:	lm671, rph289, smr999, baw246 @uowmail.edu.au
+ *	Github:	http://github.com/auVeypor/311
+ *	Group:	Project #2, Group #1
+ * 
+ */
+
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/algorithm/string.hpp>
@@ -15,9 +29,18 @@
 #include <curlpp/Easy.hpp>
 #include <curlpp/Options.hpp>
 #include <vector>
-
 #include "getApi.h"
+#include "doiIO.h"
 
+/*
+ *	Main function that accesses the Scopus Api's.
+ *	Contacts the API with FULL abstract, then REF abstract
+ *  for each reference in the doi
+ *
+ *	Parameters:
+ *		Param:	This is a string with the Doi. Cast to void
+ * 				for the thread useage
+ */
 void* getFromApi(void* param)
 {
     string &doi = *static_cast<string*>(param);
@@ -41,7 +64,7 @@ void* getFromApi(void* param)
         boost::property_tree::read_json(ss, pt);
 
         boost::optional< boost::property_tree::ptree& > checkptr = pt.get_child_optional("abstracts-retrieval-response.coredata");
-
+        //if the doi request returns information from the api, create and fill a new struct
         if(checkptr) {
             BOOST_FOREACH(boost::property_tree::ptree::value_type &v, pt.get_child("abstracts-retrieval-response.item.bibrecord.tail.bibliography.reference")) {
                 curref = new ref;
@@ -93,7 +116,7 @@ void* getFromApi(void* param)
 
         checkptr = pt.get_child_optional("abstracts-retrieval-response.references.reference");
         int i = 0;
-
+        //prepare comparison information, containing the original reference structs and the scopus meta id
         vector<prepComp> idList;
         prepComp id;
         //fill array before such that if there are any missing it is in the array but will not 
@@ -104,7 +127,7 @@ void* getFromApi(void* param)
             id.metaid = "";
             idList.push_back(id);    
         }
-
+        //get information not in the FULL response from the ref response
         if(checkptr) {
             BOOST_FOREACH(boost::property_tree::ptree::value_type &v, pt.get_child("abstracts-retrieval-response.references.reference")) {
                 boost::property_tree::ptree ptr = v.second;
@@ -125,7 +148,7 @@ void* getFromApi(void* param)
                     BOOST_FOREACH(boost::property_tree::ptree::value_type &v2, ptr.get_child("author-list.author")){
                         boost::property_tree::ptree ptr2 = v2.second;
 
-                        //if one author, they put a double of that in to force an array?
+                        //if one author, they put a double of that in to force an array by scopus
                         if(k > 0 && ptr2.get<string>("ce:indexed-name") == reflist.at(i)->authors.at(k-1))
                             break;
                         reflist.at(i)->authors.push_back(ptr2.get<string>("ce:indexed-name"));
@@ -141,7 +164,7 @@ void* getFromApi(void* param)
             }
         }
         cout << "Received from Scopus: " << doi << endl;
-
+        //prepare threads for the comparison
         pthread_t threads[idList.size()];
         for (int i = 0; i < idList.size(); i++) {
             pthread_create(&threads[i], NULL, metaCall, &idList.at(i));
@@ -166,6 +189,16 @@ void* getFromApi(void* param)
 	return (void*)currentResult;
 }
 
+/*
+ *	Calls the metadata api for each of the references that 
+ *	have a listing on Scopus, and compares the data with the 
+ *  original reference, filling the corrected Ref struct with 
+ * 	those details that are incorrect
+ *
+ *	Parameters:
+ *		Param:	This is the struct built before, containing the
+ * 				original reference data lists
+ */
 void* metaCall(void* param)
 {
     prepComp *compstruct = static_cast<prepComp*>(param);
@@ -219,6 +252,7 @@ void* metaCall(void* param)
     boost::optional< boost::property_tree::ptree& > corPageEnd = cpt.get_child_optional("abstracts-retrieval-response.coredata.prism:endingPage");
     boost::optional< boost::property_tree::ptree& > corDoi = cpt.get_child_optional("abstracts-retrieval-response.coredata.prism:doi");
 
+    //if there is any details found, set to ok, then later if a detail is found incorrect, set to wrong
     if(corTitle || corYear || corSourceTitle || corVolume || corIssue || corPageStart || corPageEnd || corDoi)
     compstruct->initial->status = "Ok";
 
