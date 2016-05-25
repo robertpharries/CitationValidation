@@ -136,69 +136,70 @@ bool doiIO::outputToCSV(int i, vector<ref*> r, vector<corRef*> c)
 	ofstream ofs;
 
 	try {
+		if(r.size() > 0) {
+			ofs.open(this->getFormattedFilename(i).c_str());
 
-		ofs.open(this->getFormattedFilename(i).c_str());
+			ofs << "Title" << "," << "Authors" << "," << "Year"<< "," << "Source Title" << "," 
+			<< "Volume No." << "," << "Issue No." << "," << "Start Page" << "," << "End Page" << "," << "DOI" 
+			<< "," << "Status" << "," << " ," << "Title" << "," << "Authors" << "," << "Year" << "," 
+			<< "Source Title" << "," << "Volume No." << "," << "Issue No." << "," << "Page Start" << "," 
+			<< "End Page" << "," << "DOI" << "\n";
 
-		ofs << "Title" << "," << "Authors" << "," << "Year"<< "," << "Source Title" << "," 
-		<< "Volume No." << "," << "Issue No." << "," << "Start Page" << "," << "End Page" << "," << "DOI" 
-		<< "," << "Status" << "," << " ," << "Title" << "," << "Authors" << "," << "Year" << "," 
-		<< "Source Title" << "," << "Volume No." << "," << "Issue No." << "," << "Page Start" << "," 
-		<< "End Page" << "," << "DOI" << "\n";
+			string authorlist1;
+			string authorlist2;
 
-		string authorlist1;
-		string authorlist2;
+			for(int j = 0; j < r.size(); j++) {
 
-		for(int j = 0; j < r.size(); j++) {
+				authorlist1 = "";
+				authorlist2 = "";
 
-			authorlist1 = "";
-			authorlist2 = "";
+				for (int k = 0; k < r.at(j)->authors.size(); k++)
+				{
+					authorlist1 = authorlist1 + r.at(j)->authors.at(k) + ", ";
+				}
 
-			for (int k = 0; k < r.at(j)->authors.size(); k++)
-			{
-				authorlist1 = authorlist1 + r.at(j)->authors.at(k) + ", ";
+				for (int k = 0; k < c.at(j)->authors.size(); k++)
+				{
+					authorlist2 = authorlist2 + c.at(j)->authors.at(k) + ", ";
+				}
+
+				if (r.at(j)->authors.size() > 0)
+				{
+					authorlist1 = authorlist1.substr(0, authorlist1.size()-2);
+				}
+
+				if (c.at(j)->authors.size() > 0)
+				{
+					authorlist2 = authorlist2.substr(0, authorlist2.size()-2);
+				}
+
+				ofs << "\"" << r.at(j)->title << "\"" << ",";
+				ofs << "\"" << authorlist1 << "\"" << ",";
+				ofs << "\"" << r.at(j)->year << "\"" << ",";
+				ofs << "\"" <<r.at(j)->sourceTitle << "\"" << ",";
+				ofs << "\"" << r.at(j)->volume << "\"" << ",";
+				ofs << "\"" << r.at(j)->issue << "\"" << ",";
+				ofs << "\"" << r.at(j)->pageStart << "\"" << ",";
+				ofs << "\"" << r.at(j)->pageEnd << "\"" << ",";
+				ofs << "\"" << r.at(j)->doi << "\"" << ",";;
+				ofs << "\"" << r.at(j)->status << "\"" << ",";
+				ofs << " ,";
+				ofs << "\"" << c.at(j)->title << "\"" << ",";
+				ofs << "\"" << authorlist2 << "\"" << ",";
+				ofs << "\"" << c.at(j)->year << "\"" << ","; 
+				ofs << "\"" << c.at(j)->sourceTitle << "\"" << ",";
+				ofs << "\"" << c.at(j)->volume << "\"" << ",";
+				ofs << "\"" << c.at(j)->issue << "\"" << ",";
+				ofs << "\"" << c.at(j)->pageStart << "\"" << ",";
+				ofs << "\"" << c.at(j)->pageEnd << "\"" << ",";
+				ofs << "\"" << c.at(j)->doi << "\"" << "\n";
+
 			}
 
-			for (int k = 0; k < c.at(j)->authors.size(); k++)
-			{
-				authorlist2 = authorlist2 + c.at(j)->authors.at(k) + ", ";
-			}
+			cout << "Successfully written " << dois.at(i) << " to CSV file." << endl;
 
-			if (r.at(j)->authors.size() > 0)
-			{
-				authorlist1 = authorlist1.substr(0, authorlist1.size()-2);
-			}
-
-			if (c.at(j)->authors.size() > 0)
-			{
-				authorlist2 = authorlist2.substr(0, authorlist2.size()-2);
-			}
-
-			ofs << "\"" << r.at(j)->title << "\"" << ",";
-			ofs << "\"" << authorlist1 << "\"" << ",";
-			ofs << "\"" << r.at(j)->year << "\"" << ",";
-			ofs << "\"" <<r.at(j)->sourceTitle << "\"" << ",";
-			ofs << "\"" << r.at(j)->volume << "\"" << ",";
-			ofs << "\"" << r.at(j)->issue << "\"" << ",";
-			ofs << "\"" << r.at(j)->pageStart << "\"" << ",";
-			ofs << "\"" << r.at(j)->pageEnd << "\"" << ",";
-			ofs << "\"" << r.at(j)->doi << "\"" << ",";;
-			ofs << "\"" << r.at(j)->status << "\"" << ",";
-			ofs << " ,";
-			ofs << "\"" << c.at(j)->title << "\"" << ",";
-			ofs << "\"" << authorlist2 << "\"" << ",";
-			ofs << "\"" << c.at(j)->year << "\"" << ","; 
-			ofs << "\"" << c.at(j)->sourceTitle << "\"" << ",";
-			ofs << "\"" << c.at(j)->volume << "\"" << ",";
-			ofs << "\"" << c.at(j)->issue << "\"" << ",";
-			ofs << "\"" << c.at(j)->pageStart << "\"" << ",";
-			ofs << "\"" << c.at(j)->pageEnd << "\"" << ",";
-			ofs << "\"" << c.at(j)->doi << "\"" << "\n";
-
+			ofs.close();
 		}
-
-		cout << "Successfully written " << dois.at(i) << " to CSV file." << endl;
-
-		ofs.close();
 	} catch(std::ofstream::failure e) {
 		cerr << "Error: Failed when opening/writing/closing file!" << endl;
 		return (false);

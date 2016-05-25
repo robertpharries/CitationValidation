@@ -104,6 +104,9 @@ void* getFromApi(void* param)
 
                 reflist.push_back(curref);
             }
+            cout << "Received from Scopus: " << doi << endl;
+        } else {
+            cout << "Could not receive " << doi << " from Scopus" << endl;
         }
 
         refurl = "http://api.elsevier.com/content/abstract/doi/" + doi + "?apiKey=eb697e3061f267d5945a3bc3c959874a&view=REF&httpAccept=application/json";
@@ -163,7 +166,6 @@ void* getFromApi(void* param)
                 i++;
             }
         }
-        cout << "Received from Scopus: " << doi << endl;
         //prepare threads for the comparison
         pthread_t threads[idList.size()];
         for (int i = 0; i < idList.size(); i++) {
